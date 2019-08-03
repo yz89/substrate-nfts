@@ -33,6 +33,8 @@ decl_storage! {
         /// Get NFToken ownership. Stored in a linked map.
         pub OwnedNFTs get(owned_nfts): map (T::AccountId, Option<T::NFTIndex>) =>
         Option<NFTLinkedItem<T>>;
+        /// Stores the NFT ownership
+        pub IndexToOwner get(index_to_owner): map T::NFTIndex => Option<T::AccountId>;
     }
 }
 
@@ -68,7 +70,7 @@ decl_module! {
             // Create and store nft
             let nft = NFToken{
                 token_id,
-                lifetime: As::as_(<system::Module<T>>::block_number()),
+                lifetime: As::as_(<system::Module<T>>::block_number()) + 10,
             };
             Self::insert_nft(&sender, nft_index, nft);
         }
@@ -113,6 +115,7 @@ impl<T: Trait> Module<T> {
 
     fn insert_owned_nft(owner: &T::AccountId, nft_index: T::NFTIndex) {
         <OwnedNFTsList<T>>::append(owner, nft_index);
+        <IndexToOwner<T>>::insert(nft_index, owner);
     }
 
     fn insert_nft(owner: &T::AccountId, nft_index: T::NFTIndex, nft: NFToken) {
@@ -134,9 +137,33 @@ impl<T: Trait> Module<T> {
         Ok(())
     }
 
+    fn burn_token(nft_index: T::NFTIndex, nft: NFToken) {
+        <IdToNFT<T>>::remove(nft.token_id);
+        <IndexToNFT<T>>::remove(nft_index);
+        let count = Self::nfts_count();
+        <NFTsCount<T>>::put(count - One::one());
+
+        let owner = <IndexToOwner<T>>::get(nft_index);
+        if owner.is_some() {
+            <OwnedNFTsList<T>>::remove(&owner.unwrap(), nft_index);
+        }
+        <IndexToOwner<T>>::remove(nft_index);
+    }
+
     fn burn_expired_tokens(num: u64) {
         runtime_io::print("Burning the token at height: ");
         runtime_io::print(num);
-        // todo: list all token and burn expired tokens
+
+        let count = Self::nfts_count();
+        for i in 0..As::as_(count) {
+            let nft_index = T::NFTIndex::sa(i);
+            let nft = Self::index_to_nft(nft_index);
+            if nft.is_some() {
+                let nft = nft.unwrap();
+                if nft.lifetime < num {
+                    Self::burn_token(nft_index, nft);
+                }
+            }
+        }
     }
 }
