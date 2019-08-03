@@ -1,0 +1,11 @@
+{
+    "NFToken": {
+        "token_id": "u256",
+        "lifetime": "u64"
+    },
+    "NFTIndex": "u64",
+    "NFTLinkedItem": {
+        "prev": "u64",
+        "next": "u64"
+    }
+}
