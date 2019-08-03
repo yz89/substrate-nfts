@@ -8,13 +8,15 @@ use support::{
 };
 use system::ensure_signed;
 
-pub trait Trait: system::Trait {
+pub trait Trait: timestamp::Trait + system::Trait {
     type NFTIndex: Parameter + Member + Default + SimpleArithmetic + Bounded + Copy;
 }
 
+type NFTokenId = [u8; 32];
+
 #[derive(Encode, Decode, Clone)]
 pub struct NFToken {
-    pub token_id: [u8; 32],
+    pub token_id: NFTokenId,
     pub lifetime: u64,
 }
 
@@ -25,7 +27,7 @@ type OwnedNFTsList<T> =
 decl_storage! {
     trait Store for Module<T: Trait> as NFTs {
         /// Stores all the NFTs, key is the NFToken Id
-        pub IdToNFT get(id_to_nft): map [u8; 32] => Option<NFToken>;
+        pub IdToNFT get(id_to_nft): map NFTokenId => Option<NFToken>;
         /// Stores all the NFTs, key is the NFToken index
         pub IndexToNFT get(index_to_nft): map T::NFTIndex => Option<NFToken>;
         /// Stores the total number of NFTs. i.e. the next NFToken index
@@ -46,8 +48,14 @@ decl_module! {
             Self::burn_expired_tokens(As::as_(n));
         }
 
+        fn get_time(origin) -> Result {
+            let _sender = ensure_signed(origin)?;
+            let _now = <timestamp::Module<T>>::get();
+            Ok(())
+        }
+
         /// Mint a new NFToken
-        pub fn mint(origin, token_id: [u8; 32], lifetime: u64) {
+        pub fn mint(origin, token_id: NFTokenId, lifetime: u64) {
             let sender = ensure_signed(origin)?;
             let nft_index = Self::next_nft_index()?;
 
@@ -95,7 +103,7 @@ decl_module! {
 }
 
 impl<T: Trait> Module<T> {
-    fn random_value(sender: &T::AccountId) -> [u8; 32] {
+    fn random_value(sender: &T::AccountId) -> NFTokenId {
         let payload = (
             <system::Module<T>>::random_seed(),
             sender.clone(),

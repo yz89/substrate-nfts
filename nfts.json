@@ -7,5 +7,6 @@
     "NFTLinkedItem": {
         "prev": "u64",
         "next": "u64"
-    }
+    },
+    "NFTokenId": "u256"
 }
