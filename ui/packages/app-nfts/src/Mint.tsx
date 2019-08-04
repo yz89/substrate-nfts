@@ -18,15 +18,8 @@ const ActionWrapper = styled.div`
     width: 0;
     height: 0;
   }
-  [type=radio] + img {
-    cursor: pointer;
-  }
-  [type=radio]:checked + img {
-    outline: 2px solid #f00;
-  }
-  .flex-container {
-    display: flex;
-  }
+  
+
 `;
 type Props = {
   accountId?: string
@@ -47,7 +40,7 @@ class Mint extends React.PureComponent<Props> {
 
   _onRadioSelected(shortName:string, e:React.SyntheticEvent) {
     const updatedSelectedValues = e.target['value']
-    alert("selected_index: "+updatedSelectedValues)
+    //alert("selected_index: "+updatedSelectedValues)
   	this.setState({radio_selection: updatedSelectedValues})
   }
   render () {
@@ -57,8 +50,9 @@ class Mint extends React.PureComponent<Props> {
     for (var i=0;i<items.length;i++){
       images.push(
         <div key={i}>
-        <label >
-          <img src ={items[i].image} width={80} height={80}/>
+        <label>
+          <img src ={items[i].image} width={80} height={80} style={{outline:(this.state.radio_selection===i.toString()?"2px solid #f00":"0px")}}/>
+          
           <input type="radio" 
               			 name="radio1"
                      onChange={(e) => {this._onRadioSelected(i.toString(), e)}}
@@ -73,7 +67,7 @@ class Mint extends React.PureComponent<Props> {
       <section>
         <ActionWrapper>
         <div ><h3>NFTS</h3>
-          <div class="flex-container">{images}</div>
+          <div style={{display:"flex"}}>{images}</div>
         </div>
         <div>
           <h3>Mint</h3>
