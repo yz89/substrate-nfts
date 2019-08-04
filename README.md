@@ -1,6 +1,11 @@
 # substrate-nfts
 
-A new SRML-based Substrate node, ready for hacking.
+A new SRML-based Substrate node.
+
+Non-Fungible Token with time-dependent feature.
+
+https://github.com/yz89/substrate-nfts/issues/2
+https://github.com/yz89/substrate-nfts/issues/5
 
 # Building
 
