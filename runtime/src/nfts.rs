@@ -8,7 +8,7 @@ use support::{
 };
 use system::ensure_signed;
 
-pub trait Trait: timestamp::Trait + system::Trait {
+pub trait Trait: system::Trait {
     type NFTIndex: Parameter + Member + Default + SimpleArithmetic + Bounded + Copy;
 }
 
@@ -48,31 +48,18 @@ decl_module! {
             Self::burn_expired_tokens(As::as_(n));
         }
 
-        fn get_time(origin) -> Result {
-            let _sender = ensure_signed(origin)?;
-            let _now = <timestamp::Module<T>>::get();
-            Ok(())
+        /// Mint a new NFToken(for param test)
+        pub fn mint_param_test(origin, token_id: NFTokenId, lifetime: u64) {
+            let sender = ensure_signed(origin)?;
+            Self::mint(&sender, token_id, lifetime)?;
         }
 
-        /// Mint a new NFToken
-        pub fn mint(origin, token_id: NFTokenId, lifetime: u64) {
+        /// Mint a new NFToken(for random test)
+        pub fn mint_random_test(origin) {
             let sender = ensure_signed(origin)?;
             let nft_index = Self::next_nft_index()?;
 
-            // Create and store nft
-            let nft = NFToken{
-                token_id,
-                lifetime,
-            };
-            Self::insert_nft(&sender, nft_index, nft);
-        }
-
-        /// Mint a new NFToken(for test)
-        pub fn mint_test(origin) {
-            let sender = ensure_signed(origin)?;
-            let nft_index = Self::next_nft_index()?;
-
-            // Generate a random 256 bit value
+            // Generate a random 128 bit value
             let token_id = Self::random_value(&sender);
 
             // Create and store nft
@@ -82,27 +69,55 @@ decl_module! {
             };
             Self::insert_nft(&sender, nft_index, nft);
         }
-
-        /// Transfer NFT
-        pub fn transfer(origin, recipient: T::AccountId, nft_index: T::NFTIndex) {
-            let sender = ensure_signed(origin)?;
-
-            // Check if the nft exsit
-            let transfer_nft = Self::index_to_nft(nft_index);
-            ensure!(transfer_nft.is_some(), "Invalid transfer nft");
-
-            // Check if the sender own this nft
-            ensure!(
-                <OwnedNFTs<T>>::exists(&(sender.clone(), Some(nft_index))),
-                "Only owner can transfer nft"
-            );
-
-            Self::do_transfer(&sender, &recipient, nft_index)?;
-        }
     }
 }
 
 impl<T: Trait> Module<T> {
+    pub fn mint(
+        sender: &T::AccountId,
+        token_id: NFTokenId,
+        lifetime: u64,
+    ) -> result::Result<T::NFTIndex, &'static str> {
+        let nft_index = Self::next_nft_index()?;
+        let nft = NFToken { token_id, lifetime };
+        Self::insert_nft(&sender, nft_index, nft);
+        Ok(nft_index)
+    }
+
+    pub fn transfer(
+        sender: &T::AccountId,
+        recipient: &T::AccountId,
+        nft_index: T::NFTIndex,
+    ) -> Result {
+        // Check if the nft exsit
+        let transfer_nft = Self::index_to_nft(nft_index);
+        ensure!(transfer_nft.is_some(), "Invalid transfer nft");
+
+        // Check if the sender own this nft
+        ensure!(
+            <OwnedNFTs<T>>::exists(&(sender.clone(), Some(nft_index))),
+            "Only owner can transfer nft"
+        );
+
+        <OwnedNFTsList<T>>::remove(&sender, nft_index);
+        <OwnedNFTsList<T>>::append(&recipient, nft_index);
+        <IndexToOwner<T>>::insert(nft_index, recipient);
+
+        Ok(())
+    }
+
+    pub fn get_nft(nft_index: T::NFTIndex) -> Option<NFToken> {
+        Self::index_to_nft(nft_index)
+    }
+
+    pub fn is_owned(owner: &T::AccountId, nft_index: T::NFTIndex) -> bool {
+        <OwnedNFTs<T>>::exists(&(owner.clone(), Some(nft_index)))
+    }
+
+    pub fn owner_of(nft_index: T::NFTIndex) -> Option<T::AccountId> {
+        Self::index_to_owner(nft_index)
+    }
+
     fn random_value(sender: &T::AccountId) -> NFTokenId {
         let payload = (
             <system::Module<T>>::random_seed(),
@@ -135,16 +150,6 @@ impl<T: Trait> Module<T> {
         Self::insert_owned_nft(owner, nft_index);
     }
 
-    fn do_transfer(
-        sender: &T::AccountId,
-        recipient: &T::AccountId,
-        nft_index: T::NFTIndex,
-    ) -> Result {
-        <OwnedNFTsList<T>>::remove(&sender, nft_index);
-        <OwnedNFTsList<T>>::append(&recipient, nft_index);
-        Ok(())
-    }
-
     fn burn_token(nft_index: T::NFTIndex, nft: NFToken) {
         <IdToNFT<T>>::remove(nft.token_id);
         <IndexToNFT<T>>::remove(nft_index);
@@ -161,7 +166,6 @@ impl<T: Trait> Module<T> {
     fn burn_expired_tokens(num: u64) {
         runtime_io::print("Burning the token at height: ");
         runtime_io::print(num);
-
         let count = Self::nfts_count();
         for i in 0..As::as_(count) {
             let nft_index = T::NFTIndex::sa(i);

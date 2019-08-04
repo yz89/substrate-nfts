@@ -64,6 +64,8 @@ mod nfts;
 
 mod linked_item;
 
+mod kitties;
+
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
 /// the specifics of the runtime. They can then be made to be agnostic over specific formats
 /// of data like extrinsics, allowing for them to continue syncing the network through upgrades
@@ -206,6 +208,11 @@ impl nfts::Trait for Runtime {
 	type NFTIndex = u64;
 }
 
+impl kitties::Trait for Runtime {
+	type Event = Event;
+	type Currency = Balances;
+}
+
 construct_runtime!(
 	pub enum Runtime with Log(InternalLog: DigestItem<Hash, AuthorityId, AuthoritySignature>) where
 		Block = Block,
@@ -222,6 +229,7 @@ construct_runtime!(
 		// Used for the module template in `./template.rs`
 		TemplateModule: template::{Module, Call, Storage, Event<T>},
 		NFTs: nfts::{Module, Call, Storage},
+		Kitty: kitties::{Module, Call, Storage, Event<T>},
 	}
 );
 
