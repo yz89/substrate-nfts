@@ -36,6 +36,7 @@ class App extends React.PureComponent<Props, State> {
       // in all apps, the main wrapper is setup to allow the padding
       // and margins inside the application. (Just from a consistent pov)
       <main>
+        <AccountSelector onChange={this.onAccountChange} />
         <Mint accountId={accountId} />
       </main>
     );

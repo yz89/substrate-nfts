@@ -4,18 +4,19 @@
 
 import { Routes } from './types';
 
-import App from '@polkadot/app-nfts';
+import Nfts from '@polkadot/app-nfts';
 
 export default ([
   {
-    Component: App as any,
+    Component: Nfts as any,
     display: {
       needsAccounts: true,
       needsApi: [
+        'tx.nfts.mint'
       ]
     },
     i18n: {
-      defaultValue: 'nfts'
+      defaultValue: 'Nfts'
     },
     icon: 'th',
     name: 'nfts'
