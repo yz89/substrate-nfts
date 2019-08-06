@@ -8,7 +8,7 @@ import { Button,InputNumber, TxButton } from '@polkadot/ui-app';
 import { withCalls } from '@polkadot/ui-api/with';
 import styled from 'styled-components';
 import items from './items';
-
+import {NFTokenId}from './types';
 const ActionWrapper = styled.div`
   margin-top: 10px;
   padding-bottom: 10px;
@@ -30,7 +30,7 @@ type State = {
   radio_selection:string
 };
 
-class Mint extends React.PureComponent<Props> {
+class Owned extends React.PureComponent<Props> {
   state: State = {
     lifetime:new BN(10),
     radio_selection:'0'
@@ -49,11 +49,10 @@ class Mint extends React.PureComponent<Props> {
     const { lifetime,radio_selection } = this.state;
     const images = []
     for (var i=0;i<items.length;i++){
+      if 
       images.push(
         <div key={i}>
         <label>
-          <img src ={items[i].image} width={80} height={80} style={{outline:(this.state.radio_selection===i.toString()?"2px solid #f00":"0px")}}/>
-          
           <input type="radio" 
               			 name="radio1"
                      onChange={(e) => {this._onRadioSelected(i.toString(), e)}}
@@ -71,7 +70,7 @@ class Mint extends React.PureComponent<Props> {
           <div style={{display:"flex"}}>{images}</div>
         </div>
         <div>
-          <h3>Mint</h3>
+          <h3>Owned</h3>
           <InputNumber
               value={lifetime}
               label='lifetime'
@@ -81,7 +80,7 @@ class Mint extends React.PureComponent<Props> {
           <TxButton accountId={accountId}
           label='mint'
           params={[items[parseInt(radio_selection)].token_id,lifetime]}
-          tx='nfts.mint_param_test'
+          tx='nfts.mint'
           />
           </Button.Group>
         </div>
@@ -91,4 +90,5 @@ class Mint extends React.PureComponent<Props> {
   }
 }
 export default withCalls<Props>(
-)(Mint);
+  ['query.nfts.nFTsCount', { propName: 'itemsCount' }]
+)(Owned);
