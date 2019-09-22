@@ -71,3 +71,6 @@ cargo run -- \
 ```
 
 Additional CLI usage options are available and may be shown by running `cargo run -- --help`.
+
+ONFinality
+hostname: https://telemetry.onfinality.io/#/substrate-nfts
